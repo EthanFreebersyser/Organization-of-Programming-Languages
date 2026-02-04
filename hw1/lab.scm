@@ -1,0 +1,25 @@
+;; Freebersyser hw1
+;; EXCERCISE 1
+(car(cdr (cdr '(jane elizabeth mary kitty lydia))))
+(car(car(cdr (cdr (car '(((jane) (elizabeth) (mary) (kitty) (lydia))))))))
+(car (car (car (cdr (cdr '(jane (elizabeth) ((mary)) (((kitty))) ((((lydia))))))))))
+
+;; EXERCISE 2
+(define sum
+  (lambda (lst)
+    (if (null? lst)
+        0
+        (+ (car lst) (sum (cdr lst))))))
+
+(sum '(5 5 1 1 2))
+
+;; EXERCISE 3
+(define keep-first-n
+  (lambda (n lst)
+    (cond ((< n 1) '())
+          ((null? lst) '())
+          (else
+           (cons (car lst)
+                 (keep-first-n (- n 1) (cdr lst)))))))
+
+(keep-first-n 3 '(a b c d e f g h i))
