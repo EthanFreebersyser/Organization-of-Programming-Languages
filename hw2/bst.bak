@@ -1,0 +1,196 @@
+(#%require rackunit)
+
+(define null-binary-tree
+  (lambda ()
+    '()))
+ 
+(define entry
+  (lambda (node)
+    (car node)))
+
+(define left
+  (lambda (node)
+    (car (cdr node))))
+
+(define right
+  (lambda (node)
+    (car (cdr (cdr node)))))
+
+(define make-binary-tree
+  (lambda (element left-subtree right-subtree)
+    (list element left-subtree right-subtree)))
+
+(define binary-tree?
+  (lambda (obj)
+    (cond
+      ((null? obj)                      #t) ; empty is a BT
+      ((and (pair? obj)
+            (= (length obj) 3) 
+            (integer? (entry obj)) 
+            (binary-tree? (left obj))   ; left tree must be BT
+            (binary-tree? (right obj))) #t)
+      (else                             #f)))) 
+
+(define bst?
+  (lambda (obj)
+    (and (binary-tree? obj)
+         (cond
+           ((null? obj) #t)
+           (else
+            (and (less? (left obj) (entry obj))
+                 (greater? (right obj) (entry obj))
+                 (bst? (left obj))
+                 (bst? (right obj))))))))
+    
+(define less?
+  (lambda (obj val)
+    (cond
+      ((null? obj)          #t)
+      ((>= (entry obj) val) #f)
+      (else
+       (and (less? (left obj) val)
+            (less? (right obj) val))))))
+
+(define greater?
+  (lambda (obj val)
+    (cond
+      ((null? obj)          #t)
+      ((<= (entry obj) val) #f)
+      (else
+       (and (greater? (left obj) val)
+            (greater? (right obj) val))))))
+
+(define null-binary-tree?
+  (lambda (obj)
+    (and (binary-tree? obj)
+         (null? obj))))
+
+(define member?
+  (lambda (v bst)
+    (cond
+      ((null? bst)       #f)
+      ((= v (entry bst)) #t)
+      ((< v (entry bst)) (member? v (left bst)))
+      (else              (member? v (right bst))))))
+
+(define preorder
+  (lambda (bst)
+    (cond
+      ((null? bst) '())
+      (else
+       (append (list(entry bst))
+               (preorder (left bst))
+               (preorder (right bst)))))))
+
+(define inorder
+  (lambda (bst)
+    (cond
+      ((null? bst) '())
+      (else
+       (append (inorder (left bst))
+               (list (entry bst))
+               (inorder (right bst)))))))
+
+(define postorder
+  (lambda (bst)
+    (cond
+      ((null? bst) '())
+      (else
+       (append (postorder (left bst))
+               (postorder (right bst))
+               (list (entry bst)))))))
+
+(define insert
+  (lambda (v bst)
+    (cond
+      ((null? bst)
+       (make-binary-tree v '() '()))
+      ((= v (entry bst)) bst)
+      ((< v (entry bst))
+       (make-binary-tree (entry bst)
+                         (insert v (left bst))
+                         (right bst)))
+      (else
+       (make-binary-tree (entry bst)
+                         (left bst)
+                         (insert v (right bst)))))))
+      
+     
+;; Tests
+
+;null-binary-tree
+(check-equal? (null-binary-tree) '())
+
+;entry
+(check-equal? (entry '(5 () ())) 5)                     
+(check-equal? (entry '(10 (3 () ()) (15 () ()))) 10)    
+(check-equal? (entry '(-5 () ())) -5)
+
+;left
+(check-equal? (left '(5 () ())) '())                   
+(check-equal? (left '(5 (3 () ()) ())) '(3 () ()))
+(check-equal? (left '(10 (5 (2 () ()) (7 () ())) (15 () ()))) 
+              '(5 (2 () ()) (7 () ())))
+
+;right
+(check-equal? (right '(5 () ())) '())                  
+(check-equal? (right '(5 () (7 () ()))) '(7 () ()))     
+(check-equal? (right '(10 (5 () ()) (15 (12 () ()) (20 () ())))) 
+              '(15 (12 () ()) (20 () ())))
+
+;make-binary-tree
+(check-equal? (make-binary-tree 5 '() '()) 
+              '(5 () ()))
+(check-equal? (make-binary-tree 10 '(5 () ()) '(15 () ()))
+              '(10 (5 () ()) (15 () ())))
+(check-equal? (make-binary-tree 1 (make-binary-tree 2 '() '()) '())
+              '(1 (2 () ()) ()))
+
+;null-binary-tree?
+(check-equal? (null-binary-tree? '()) #t)
+(check-equal? (null-binary-tree? (null-binary-tree)) #t)
+(check-equal? (null-binary-tree? '(5 () ())) #f)
+(check-equal? (null-binary-tree? '(1 (2 () ()) (3 () ()))) #f)
+
+;binary-tree?
+(check-equal? (binary-tree? '()) #t)
+(check-equal? (binary-tree? '(5 () ())) #t)
+(check-equal? (binary-tree? '(5 (3 () ()) ())) #t)
+(check-equal? (binary-tree? 5) #f)
+(check-equal? (binary-tree? '(5)) #f)
+(check-equal? (binary-tree? '(5 ())) #f)
+
+;bst?
+(check-equal? (bst? '()) #t)
+(check-equal? (bst? '(5 () ())) #t)
+(check-equal? (bst? '(5 (3 () ()) ())) #t)
+(check-equal? (bst? '(5 (7 () ()) ())) #f)
+(check-equal? (bst? '(5 () (3 () ()))) #f)
+(check-equal? (bst? '(5 (7 () ()) (3 () ()))) #f)
+
+;memeber
+(check-equal? (member? 5 '()) #f)
+(check-equal? (member? 5 '(5 () ())) #t)
+(check-equal? (member? 3 '(5 () ())) #f)
+(check-equal? (member? 7 '(5 () ())) #f)
+
+;preorder
+(check-equal? (preorder '(5 () ())) '(5))
+(check-equal? (preorder '(5 (3 () ()) ())) '(5 3))
+(check-equal? (preorder '(5 () (7 () ()))) '(5 7))
+
+;inorder
+(check-equal? (inorder '(5 () ())) '(5))
+(check-equal? (inorder '(5 (3 () ()) ())) '(3 5))
+(check-equal? (inorder '(5 () (7 () ()))) '(5 7))
+
+;post order
+(check-equal? (postorder '(5 () ())) '(5))
+(check-equal? (postorder '(5 (3 () ()) ())) '(3 5))
+(check-equal? (postorder '(5 () (7 () ()))) '(7 5))
+
+;insert
+(check-equal? (insert 5 '()) '(5 () ()))
+(check-equal? (insert 3 '(5 () ())) '(5 (3 () ()) ()))
+(check-equal? (insert 7 '(5 () ())) '(5 () (7 () ())))
+(check-equal? (insert 5 '(5 () ())) '(5 () ()))
